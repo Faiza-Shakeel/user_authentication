@@ -6,7 +6,9 @@ const bcrypt= require('bcrypt')
 const LocalStrategy = require('passport-local').Strategy;
 const User = require('./models/user');
 const {jwtAuthMiddleware,generate_token} =require("./jwt")
-
+const generateotp=require("./utils/generateotp")
+const sendmail=require('./utils/generateotp')
+const nodemailer = require('nodemailer');
 const app = express();
 app.use(express.json());
 
@@ -44,6 +46,7 @@ app.post('/register', async (req, res) => {
   const { username, password } = req.body;
   try {
     const newUser = new User({ username, password });
+
     const response = await newUser.save();
     
    
@@ -53,18 +56,38 @@ app.post('/register', async (req, res) => {
 });
 
 app.post('/login', passport.authenticate('local', { session: false }),
-  (req, res) => {
-    const payload = {
-      username: req.user.username,
-      id: req.user._id
-    };
-     // generating token
-    const token = generate_token(payload);
-    console.log({payload:payload ,token:token})
- 
-    res.send(`Welcome ${req.user.username}, you are logged in`);
+  async(req, res) => {
+    const otp=generateotp()
+        // Save OTP in DB for this user (with expiry)
+      req.user.otp = otp;
+      req.user.otpExpires = Date.now() + 5 * 60 * 1000; // 5 min expiry
+      await req.user.save();
+      sendmail(req.user.email,otp)
+  
+   
   }
 );
+app.post('/verify-otp', async (req, res) => {
+  const { username, otp } = req.body;
+  const user = await User.findOne({ username });
+
+  if (!user) return res.status(400).send("User not found");
+  if (user.otp !== otp || user.otpExpires < Date.now()) {
+    return res.status(400).send("Invalid or expired OTP");
+  }
+
+  // Clear OTP once verified
+  user.otp = null;
+  user.otpExpires = null;
+  await user.save();
+
+  // Generate JWT
+  const payload = { username: user.username, id: user._id };
+  const token = generate_token(payload);
+
+  res.json({ message: "Login successful", token });
+});
+
 app.get('/profile', jwtAuthMiddleware, (req, res) => {
   res.send(`Hello ${req.user.userdata.username} `);
 });
