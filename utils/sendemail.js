@@ -4,7 +4,7 @@ dotenv.config();  // load environment variables from .env file
 const user = require("../models/user");
 
 // Function to send email
-async function sendEmail(to, subject, text,useremail,otp) {
+ const sendmail =async (useremail,otp)=> {
   // Step 1: Create a transporter (connection to email service)
   const transporter = nodemailer.createTransport({
     service: "gmail",    // using Gmail service (can also use outlook, yahoo, or SMTP)
@@ -26,6 +26,4 @@ async function sendEmail(to, subject, text,useremail,otp) {
   await transporter.sendMail(mailOptions);
   console.log("Email sent successfully!");
 }
-
-// Example usage
-sendEmail("user@example.com", "Your OTP Code", "Your OTP is 123456");
+ module.exports=sendmail
