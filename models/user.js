@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
     {
         type: String,
         required: true,
-        unique: true
+       
     },
     email: {
         type: String,
@@ -16,8 +16,9 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    otp: { type: Number },
-    otpExpires: { type: Date }
+    otp: { type: String },
+    otpExpires: { type: Date },
+    isVerified: { type: Boolean, default: false }
 
 });
 userSchema.pre('save', async function (next) {

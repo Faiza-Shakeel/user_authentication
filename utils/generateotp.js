@@ -1,6 +1,6 @@
 const express = require('express');
 const generateotp = () => {
-    const otp = Math.floor(100000 + Math.random() * 900000);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
     return otp;
 }   
 module.exports = generateotp;
